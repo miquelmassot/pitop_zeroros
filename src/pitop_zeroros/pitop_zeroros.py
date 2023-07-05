@@ -14,6 +14,8 @@ class PitopZeroROS:
         self.wheel_diameter = 0.065
         self.timer_period = 0.01  # seconds
 
+        print("Using IP address: " + ip + " for ZeroROS broker")
+
         # Create ZeroROS broker
         self.broker = MessageBroker(ip=ip)
 
@@ -55,7 +57,10 @@ class PitopZeroROS:
 def main():
     print("Starting PitopZeroROS")
 
-    parser = argparse.ArgumentParser(description="PitopZeroROS")
+    parser = argparse.ArgumentParser(
+        description="PitopZeroROS",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument(
         "--ip",
         type=str,
