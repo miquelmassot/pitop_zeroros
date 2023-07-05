@@ -50,8 +50,9 @@ class PitopZeroROS:
         self.right_wheel_rpm_pub.publish(Float64(data=right_wheel_rpm))
 
     def stop(self):
-        self.twist_sub.stop()
         self.timer.stop()
+        self.twist_sub.stop()
+        self.controller.robot_move(0.0, 0.0)
 
 
 def main():
@@ -75,6 +76,8 @@ def main():
         while True:
             pass
     except KeyboardInterrupt:
+        print("KeyboardInterrupt received, stopping…")
+    finally:
         ptzr.stop()
         print("PitopZeroROS stopped")
 
