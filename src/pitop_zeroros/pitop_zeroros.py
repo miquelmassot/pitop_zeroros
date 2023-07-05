@@ -1,9 +1,7 @@
 import zeroros
-from zeroros import Twist
-from zeroros import Float64
-from imr_comms.message_broker import MessageBroker
+from zeroros.messages import Twist, Float64
+from zeroros.message_broker import MessageBroker
 
-from .get_quaternion_from_euler import get_quaternion_from_euler
 from .pitop_controller import Pitop
 
 
@@ -14,7 +12,7 @@ class PitopZeroROS:
         self.wheel_diameter = 0.065
         self.timer_period = 0.01  # seconds
 
-        # Create zeroROS broker
+        # Create ZeroROS broker
         self.broker = MessageBroker()
 
         # Create twist subscriber
