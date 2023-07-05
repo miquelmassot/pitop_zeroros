@@ -18,6 +18,9 @@ class Pitop:
     ):
         self.ready = False
 
+        self.left_motor_port = left_port
+        self.right_motor_port = right_port
+
         # chassis setup
         self.wheel_separation = wheel_separation
         self.wheel_diameter = wheel_diameter
