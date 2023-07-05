@@ -15,16 +15,16 @@ class PitopZeroROS:
         # Create ZeroROS broker
         self.broker = MessageBroker()
 
+        # Instance the PiTop driver
+        self.controller = Pitop(
+            wheel_diameter=self.wheel_diameter, wheel_separation=self.wheel_separation
+        )
+
         # Create twist subscriber
         self.twist_sub = zeroros.Subscriber("/cmd_vel", Twist, self.twist_callback)
         self.left_wheel_rpm_pub = zeroros.Publisher("/left_wheel_rpm", Float64)
         self.right_wheel_rpm_pub = zeroros.Publisher("/right_wheel_rpm", Float64)
         self.timer = zeroros.Timer(self.timer_period, self.timer_callback)
-
-        # Instance the PiTop driver
-        self.controller = Pitop(
-            wheel_diameter=self.wheel_diameter, wheel_separation=self.wheel_separation
-        )
 
     def twist_callback(self, msg):
         self.get_logger().info(
