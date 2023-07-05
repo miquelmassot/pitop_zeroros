@@ -31,7 +31,7 @@ class PitopZeroROS:
         self.timer = zeroros.Timer(self.timer_period, self.timer_callback)
 
     def twist_callback(self, msg):
-        self.get_logger().info(
+        print(
             'I heard: "%s"' % msg.linear.x
             + ' "%s"' % msg.linear.y
             + ' "%s"' % msg.linear.z
