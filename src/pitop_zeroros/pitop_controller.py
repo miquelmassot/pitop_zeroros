@@ -22,16 +22,6 @@ class Pitop:
         self.wheel_separation = wheel_separation
         self.wheel_diameter = wheel_diameter
 
-        # Round down to ensure no speed value ever goes above maximum due to rounding issues
-        # (resulting in error)
-        self.max_motor_speed = (
-            floor(min(self.left_motor.max_speed, self.right_motor.max_speed) * 1000)
-            / 1000
-        )
-        self.max_robot_angular_speed = self.max_motor_speed / (
-            self.wheel_separation / 2
-        )
-
         left_direction = ForwardDirection.COUNTER_CLOCKWISE
         right_direction = ForwardDirection.CLOCKWISE
         if invert_left:
@@ -54,6 +44,16 @@ class Pitop:
             braking_type=BrakingType.COAST,
             wheel_diameter=self.wheel_diameter,
             name="Right Motor",
+        )
+
+        # Round down to ensure no speed value ever goes above maximum due to rounding issues
+        # (resulting in error)
+        self.max_motor_speed = (
+            floor(min(self.left_motor.max_speed, self.right_motor.max_speed) * 1000)
+            / 1000
+        )
+        self.max_robot_angular_speed = self.max_motor_speed / (
+            self.wheel_separation / 2
         )
 
         # Motor syncing
