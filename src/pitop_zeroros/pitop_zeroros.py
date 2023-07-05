@@ -53,6 +53,7 @@ class PitopZeroROS:
         self.timer.stop()
         self.twist_sub.stop()
         self.controller.robot_move(0.0, 0.0)
+        self.broker.stop()
 
 
 def main():
