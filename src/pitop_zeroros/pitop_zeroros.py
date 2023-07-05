@@ -4,16 +4,18 @@ from zeroros.message_broker import MessageBroker
 
 from .pitop_controller import Pitop
 
+import argparse
+
 
 class PitopZeroROS:
-    def __init__(self):
+    def __init__(self, ip="*"):
         # chassis setup
         self.wheel_separation = 0.163
         self.wheel_diameter = 0.065
         self.timer_period = 0.01  # seconds
 
         # Create ZeroROS broker
-        self.broker = MessageBroker()
+        self.broker = MessageBroker(ip=ip)
 
         # Instance the PiTop driver
         self.controller = Pitop(
@@ -52,7 +54,17 @@ class PitopZeroROS:
 
 def main():
     print("Starting PitopZeroROS")
-    ptzr = PitopZeroROS()
+
+    parser = argparse.ArgumentParser(description="PitopZeroROS")
+    parser.add_argument(
+        "--ip",
+        type=str,
+        default="*",
+        help="IP address of the broker. Defaults to * (all interfaces)",
+    )
+    args = parser.parse_args()
+
+    ptzr = PitopZeroROS(args.ip)
 
     try:
         while True:
