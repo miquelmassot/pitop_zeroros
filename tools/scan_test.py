@@ -3,57 +3,13 @@ import time
 import math
 import sys
 from collections import deque
+import traceback
 import numpy as np
-from pitop_zeroros.rplidar import RPLidar
+from pitop_zeroros.rplidar import RPLidarImpl as RPLidar
 import pygame
 
-serial_port = "/dev/ttyUSB0"
 
-lidar = RPLidar(port=serial_port)
-
-print("Sent RESET command...")
-lidar.reset()
-
-time.sleep(1)
-
-model, fw, hw, serial_no = lidar.get_device_info()
-health_status, err_code = lidar.get_device_health()
-
-print(
-    """
-    ===
-    Opened LIDAR on serial port {}
-    Model ID: {}
-    Firmware: {}
-    Hardware: {}
-    Serial Number: {}
-    Device Health Status: {} (Error Code: 0x{:X})
-    ===
-    """.format(
-        serial_port, model, fw, hw, serial_no.hex(), health_status, err_code
-    )
-)
-
-pygame.init()
-clock = pygame.time.Clock()
-
-font = pygame.font.SysFont("Monospace Regular", 15)
-
-screen_radius = 900
-screen_size = (screen_radius, screen_radius)
-screen_center = (int(screen_radius / 2), int(screen_radius / 2))
-screen = pygame.display.set_mode(screen_size)
-
-lidar.start_scan()
-
-last_scans = deque([], 10)
-cur_scan = []
-
-surf = pygame.Surface(screen_size)
-surf = surf.convert()
-
-
-def draw_scan(scan_data):
+def draw_scan(scan_data, screen_radius, surf):
     for angle, dist in scan_data:
         rel_dist = (screen_radius / 2) * (dist / 8000)
         angle_rad = math.radians(angle)
@@ -66,16 +22,7 @@ def draw_scan(scan_data):
         pygame.draw.circle(surf, [255, 0, 0], pos, 1)
 
 
-def get_lidar_scan_at(degrees):
-    deg_bin = []
-    for scan in last_scans:
-        for angle, dist in scan:
-            if math.trunc(angle) == math.trunc(degrees):
-                deg_bin.append(dist)
-    return np.min(deg_bin)
-
-
-def exit():
+def exit(lidar):
     lidar.stop_scan()
     lidar.dev.dtr = True
     sys.exit(0)
@@ -85,80 +32,140 @@ def calculate_lidar_model(distance):
     return np.array([(distance / 100) * 2, 0, 100, 8000])
 
 
-print("Setting board PWM...")
-lidar.dev.dtr = False
+def main():
+    serial_port = "/dev/ttyUSB0"
 
-try:
-    while True:
-        dt = clock.tick(60)
+    lidar = RPLidar(port=serial_port)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    exit()
+    print("Sent RESET command...")
+    lidar.reset()
 
-        polled_samples = lidar.poll_scan_samples()
-        if len(polled_samples) > 0:
-            print("[{}] Read {} samples...".format(time.clock(), len(polled_samples)))
+    time.sleep(1)
 
-            for angle, dist, new_scan in polled_samples:
-                if new_scan:
-                    last_scans.append(cur_scan)
-                    cur_scan = []
+    model, fw, hw, serial_no = lidar.get_device_info()
+    health_status, err_code = lidar.get_device_health()
 
-                cur_scan.append((angle, dist))
+    print(
+        """
+        ===
+        Opened LIDAR on serial port {}
+        Model ID: {}
+        Firmware: {}
+        Hardware: {}
+        Serial Number: {}
+        Device Health Status: {} (Error Code: 0x{:X})
+        ===
+        """.format(
+            serial_port, model, fw, hw, serial_no.hex(), health_status, err_code
+        )
+    )
 
-        surf.fill((250,) * 3)
+    pygame.init()
+    clock = pygame.time.Clock()
 
-        for angle in range(0, 360, 15):
-            angle_rad = math.radians(angle)
-            endpt = (
-                int(screen_radius / 2)
-                + math.trunc(screen_radius * math.cos(angle_rad)),
-                int(screen_radius / 2)
-                + math.trunc(screen_radius * math.sin(angle_rad)),
-            )
+    font = pygame.font.SysFont("Monospace Regular", 15)
 
-            pygame.draw.line(surf, [128, 128, 128], screen_center, endpt)
+    screen_radius = 500
+    screen_size = (screen_radius, screen_radius)
+    screen_center = (int(screen_radius / 2), int(screen_radius / 2))
+    screen = pygame.display.set_mode(screen_size)
 
-            text_angle = math.radians(angle + 1)
+    lidar.start_scan()
 
-            text_pt = (
-                int(screen_radius / 2)
-                + math.trunc(screen_radius * 0.30 * math.cos(text_angle)),
-                int(screen_radius / 2)
-                + math.trunc(screen_radius * 0.30 * math.sin(text_angle)),
-            )
+    last_scans = deque([], 10)
+    cur_scan = []
 
-            text_surf = font.render(str(angle), False, (0, 0, 0))
-            surf.blit(text_surf, text_pt)
+    surf = pygame.Surface(screen_size)
+    surf = surf.convert()
 
-        for i in range(1, 9):
-            pygame.draw.circle(
-                surf,
-                [128, 128, 128],
-                screen_center,
-                math.trunc((screen_radius / 2) * (i / 8)),
-                2,
-            )
+    print("Setting board PWM...")
+    lidar.dev.dtr = False
 
-            text_pt = (
-                int(screen_radius / 2) + math.trunc((screen_radius / 2) * (i / 8)),
-                int(screen_radius / 2),
-            )
+    try:
+        while True:
+            dt = clock.tick(60)
 
-            text_surf = font.render(str(i) + "m", False, (0, 0, 0))
-            surf.blit(text_surf, text_pt)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    print("Exiting... (QUIT)")
+                    exit(lidar)
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        print("Exiting... (ESCAPE)")
+                        exit(lidar)
 
-        for scan in last_scans:
-            draw_scan(scan)
+            polled_samples = lidar.poll_scan_samples()
+            if len(polled_samples) > 0:
+                print(
+                    "[{}] Read {} samples...".format(
+                        time.process_time(), len(polled_samples)
+                    )
+                )
 
-        draw_scan(cur_scan)
+                for angle, dist, quality, new_scan in polled_samples:
+                    if new_scan:
+                        last_scans.append(cur_scan)
+                        cur_scan = []
 
-        screen.blit(surf, (0, 0))
-        pygame.display.flip()
+                    cur_scan.append((angle, dist))
 
-finally:
-    exit()
+            surf.fill((250,) * 3)
+
+            for angle in range(0, 360, 15):
+                angle_rad = math.radians(angle)
+                endpt = (
+                    int(screen_radius / 2)
+                    + math.trunc(screen_radius * math.cos(angle_rad)),
+                    int(screen_radius / 2)
+                    + math.trunc(screen_radius * math.sin(angle_rad)),
+                )
+
+                pygame.draw.line(surf, [128, 128, 128], screen_center, endpt)
+
+                text_angle = math.radians(angle + 1)
+
+                text_pt = (
+                    int(screen_radius / 2)
+                    + math.trunc(screen_radius * 0.30 * math.cos(text_angle)),
+                    int(screen_radius / 2)
+                    + math.trunc(screen_radius * 0.30 * math.sin(text_angle)),
+                )
+
+                text_surf = font.render(str(angle), False, (0, 0, 0))
+                surf.blit(text_surf, text_pt)
+
+            for i in range(1, 9):
+                pygame.draw.circle(
+                    surf,
+                    [128, 128, 128],
+                    screen_center,
+                    math.trunc((screen_radius / 2) * (i / 8)),
+                    2,
+                )
+
+                text_pt = (
+                    int(screen_radius / 2) + math.trunc((screen_radius / 2) * (i / 8)),
+                    int(screen_radius / 2),
+                )
+
+                text_surf = font.render(str(i) + "m", False, (0, 0, 0))
+                surf.blit(text_surf, text_pt)
+
+            for scan in last_scans:
+                draw_scan(scan, screen_radius, surf)
+
+            draw_scan(cur_scan, screen_radius, surf)
+
+            screen.blit(surf, (0, 0))
+            pygame.display.flip()
+    except KeyboardInterrupt:
+        print("Exiting... (KeyboardInterrupt)")
+    except Exception as e:
+        print("Exiting... (Exception: {})".format(e))
+        traceback.print_exc()
+    finally:
+        exit(lidar)
+
+
+if __name__ == "__main__":
+    main()
