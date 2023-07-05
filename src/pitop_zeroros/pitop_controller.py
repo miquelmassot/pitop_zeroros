@@ -11,8 +11,8 @@ class Pitop:
         self,
         wheel_separation,
         wheel_diameter,
-        left_port="M0",
-        right_port="M1",
+        left_port="M3",
+        right_port="M0",
         invert_left=False,
         invert_right=True,
     ):
