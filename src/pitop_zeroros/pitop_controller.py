@@ -16,6 +16,8 @@ class Pitop:
         invert_left=False,
         invert_right=True,
     ):
+        self.ready = False
+
         # chassis setup
         self.wheel_separation = wheel_separation
         self.wheel_diameter = wheel_diameter
@@ -61,6 +63,10 @@ class Pitop:
         # make sure the Expansion Plate is attached to the pi-top
         device = FirmwareDevice(FirmwareDeviceID.pt4_expansion_plate)
         version = device.get_sch_hardware_version_major()
+        if version is None:
+            raise Exception("Expansion Plate not found")
+
+        self.ready = True
 
     def _set_synchronous_motor_movement_mode(self):
         sync_config = (
@@ -92,14 +98,20 @@ class Pitop:
         return speed_left, speed_right
 
     def current_rpm(self):
+        if not self.ready:
+            return 0.0, 0.0
         return self.left_motor.current_rpm(), self.right_motor.current_rpm()
 
     def robot_move_rpm(self, rpm_left, rpm_right):
+        if not self.ready:
+            return
         self.left_motor.set_target_speed(target_speed=rpm_left)
         self.right_motor.set_target_speed(target_speed=rpm_right)
         self._start_synchronous_motor_movement()
 
     def robot_move(self, linear_speed, angular_speed, turn_radius=0.0):
+        if not self.ready:
+            return
         # TODO: turn_radius will introduce a hidden linear speed component to the robot,
         # so params are syntactically misleading
         speed_left, speed_right = self._calculate_motor_speeds(
