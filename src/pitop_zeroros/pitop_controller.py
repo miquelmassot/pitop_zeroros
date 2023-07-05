@@ -103,7 +103,7 @@ class Pitop:
     def current_rpm(self):
         if not self.ready:
             return 0.0, 0.0
-        return self.left_motor.current_rpm(), self.right_motor.current_rpm()
+        return self.left_motor.current_rpm, self.right_motor.current_rpm
 
     def robot_move_rpm(self, rpm_left, rpm_right):
         if not self.ready:
