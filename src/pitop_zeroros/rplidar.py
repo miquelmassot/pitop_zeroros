@@ -453,11 +453,13 @@ class RPLidar:
         self.standard_dt_us, self.express_dt_us = self._lidar.get_sample_period()
 
         self.msg = LaserScan()
-        self.msg.range_max_m = self.range_max_m
-        self.msg.range_min_m = self.range_min_m
-        self.msg.angle_max_rad = self.angle_max_rad
-        self.msg.angle_min_rad = self.angle_min_rad
-        self.msg.time_increment_s = self.standard_dt_us / 1e6
+        self.msg.header.frame_id = "laser"
+        self.msg.header.seq = 0
+        self.msg.range_max = self.range_max_m
+        self.msg.range_min = self.range_min_m
+        self.msg.angle_max = self.angle_max_rad
+        self.msg.angle_min = self.angle_min_rad
+        self.msg.time_increment = self.standard_dt_us / 1e6
 
         self.th = Thread(target=self.loop, daemon=True)
         self.th.start()
@@ -465,11 +467,14 @@ class RPLidar:
     def process(self, polled_samples):
         if len(polled_samples) == 0:
             return
-        self.msg.stamp_s = get_utc_stamp()
+        self.msg.header.stamp = get_utc_stamp()
         self.msg.ranges = []
         self.msg.intensities = []
-        self.msg.angles = []
         for angle, dist, quality, new_scan in polled_samples:
+            if new_scan:
+                print(self.msg)
+                self.msg.ranges = []
+                self.msg.intensities = []
             range_m = float(dist) / 1000.0
             angle_rad = np.radians(float(angle))
             if range_m < self.range_min_m or range_m > self.range_max_m:
@@ -509,5 +514,5 @@ if __name__ == "__main__":
         }
     )
     while True:
-        print(rplidar.read())
+        rplidar.read()
         time.sleep(1.0)
