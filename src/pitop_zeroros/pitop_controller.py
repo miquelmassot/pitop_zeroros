@@ -13,8 +13,8 @@ class Pitop:
         wheel_diameter,
         left_port="M3",
         right_port="M0",
-        invert_left=True,
-        invert_right=True,
+        invert_left=False,
+        invert_right=False,
     ):
         self.ready = False
 
