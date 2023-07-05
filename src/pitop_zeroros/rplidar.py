@@ -483,7 +483,6 @@ class RPLidar:
                 continue
             self.msg.ranges.append(range_m)
             self.msg.intensities.append(quality)
-            self.msg.angles.append(angle_rad)
 
     def loop(self):
         print("Running laser thread...")
