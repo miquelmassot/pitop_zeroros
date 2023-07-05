@@ -7,7 +7,7 @@ import numpy as np
 import serial
 
 from zeroros import Rate
-from zeroros.messages import LaserScanMessage
+from zeroros.messages import LaserScan
 from .tools import get_utc_stamp
 
 """
@@ -452,7 +452,7 @@ class RPLidar:
         time.sleep(1)
         self.standard_dt_us, self.express_dt_us = self._lidar.get_sample_period()
 
-        self.msg = LaserScanMessage()
+        self.msg = LaserScan()
         self.msg.range_max_m = self.range_max_m
         self.msg.range_min_m = self.range_min_m
         self.msg.angle_max_rad = self.angle_max_rad
@@ -490,7 +490,7 @@ class RPLidar:
             self.process(polled_samples)
             r.sleep()
 
-    def read(self) -> LaserScanMessage:
+    def read(self) -> LaserScan:
         return self.msg
 
     def __del__(self):
