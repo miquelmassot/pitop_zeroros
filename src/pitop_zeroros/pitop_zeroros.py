@@ -46,7 +46,6 @@ class PitopZeroROS:
         self.right_wheel_rpm_pub.publish(Float64(data=right_wheel_rpm))
 
     def stop(self):
-        self.controller.robot_stop()
         self.twist_sub.stop()
         self.timer.stop()
 
